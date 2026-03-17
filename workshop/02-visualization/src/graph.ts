@@ -41,10 +41,12 @@ export class Graph {
 
         // Draw the edges
         context.strokeStyle = 'white';
+        context.fillStyle = 'white';
         context.lineWidth = 2;
         
         for (const edges of this.connections.values()) {
             for (const edge of edges) {
+                // Draw line between nodes
                 const fromNode = this.nodes.get(edge.from)!;
                 const toNode = this.nodes.get(edge.to)!;
 
@@ -52,15 +54,34 @@ export class Graph {
                 context.moveTo(fromNode.position.x, fromNode.position.y);
                 context.lineTo(toNode.position.x, toNode.position.y);
                 context.stroke();
+
+                // Draw arrowhead in the middle of the edge
+                const middleX = (fromNode.position.x + toNode.position.x) / 2;
+                const middleY = (fromNode.position.y + toNode.position.y) / 2;
+                const differenceX = toNode.position.x - fromNode.position.x;
+                const differenceY = toNode.position.y - fromNode.position.y;
+                const angle = Math.atan2(differenceY, differenceX);
+
+                context.save();
+                context.translate(middleX, middleY);
+                context.rotate(angle);
+                context.beginPath();
+                context.moveTo(5, 0);
+                context.lineTo(-5, -5);
+                context.lineTo(-5, 5);
+                context.closePath();
+                context.fill();
+                context.stroke();
+                context.restore();
             }
         }
 
         // Draw the nodes
         context.fillStyle = 'orange';
-        
+
         for (const node of this.nodes.values()) {
             context.beginPath();
-            context.arc(node.position.x, node.position.y, 20, 0, Math.PI * 2);
+            context.arc(node.position.x, node.position.y, 10, 0, Math.PI * 2);
             context.fill();
         }
     }
