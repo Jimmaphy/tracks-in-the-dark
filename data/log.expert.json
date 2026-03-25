@@ -1,0 +1,509 @@
+[
+    {
+        "timestamp": "2026-03-26 03:09:30",
+        "sensor": "C1",
+        "data": {
+            "train_id": "FT1234"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:10:00",
+        "sensor": "AC1.1",
+        "data": {
+            "axle_count": 24,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:15:00",
+        "sensor": "SS1",
+        "data": {
+            "new_switch_position": "diverging"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:18:00",
+        "sensor": "AC1.2",
+        "data": {
+            "axle_count": 24,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:19:00",
+        "sensor": "AC2.1",
+        "data": {
+            "axle_count": 24,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:20:00",
+        "sensor": "AC2.2",
+        "data": {
+            "axle_count": 24,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:21:00",
+        "sensor": "AC2.3",
+        "data": {
+            "axle_count": 24,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:22:00",
+        "sensor": "AC2.4",
+        "data": {
+            "axle_count": 24,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:23:00",
+        "sensor": "AC2.5",
+        "data": {
+            "axle_count": 24,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:23:05",
+        "sensor": "C2",
+        "data": {
+            "train_id": "FT9876"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:23:10",
+        "sensor": "AC1.10",
+        "data": {
+            "axle_count": 12,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:24:10",
+        "sensor": "AC1.9",
+        "data": {
+            "axle_count": 12,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:25:10",
+        "sensor": "AC1.8",
+        "data": {
+            "axle_count": 12,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:30:00",
+        "sensor": "AC2.6",
+        "data": {
+            "axle_count": 4,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:30:10",
+        "sensor": "SS4",
+        "data": {
+            "new_switch_position": "diverging"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:31:00",
+        "sensor": "AC2.7",
+        "data": {
+            "axle_count": 4,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:31:10",
+        "sensor": "AC1.7",
+        "data": {
+            "axle_count": 12,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:32:00",
+        "sensor": "AC2.8",
+        "data": {
+            "axle_count": 4,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:32:10",
+        "sensor": "AC3.6",
+        "data": {
+            "axle_count": 12,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:33:00",
+        "sensor": "AC2.9",
+        "data": {
+            "axle_count": 4,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:33:10",
+        "sensor": "AC3.5",
+        "data": {
+            "axle_count": 12,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:34:10",
+        "sensor": "AC3.4",
+        "data": {
+            "axle_count": 12,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:38:00",
+        "sensor": "SS5",
+        "data": {
+            "new_switch_position": "diverging"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:40:10",
+        "sensor": "SS2",
+        "data": {
+            "new_switch_position": "diverging"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:41:00",
+        "sensor": "AC2.9",
+        "data": {
+            "axle_count": 4,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:42:00",
+        "sensor": "AC4.4",
+        "data": {
+            "axle_count": 4,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:43:00",
+        "sensor": "AC4.3",
+        "data": {
+            "axle_count": 4,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:43:10",
+        "sensor": "AC3.3",
+        "data": {
+            "axle_count": 4,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:44:00",
+        "sensor": "AC4.2",
+        "data": {
+            "axle_count": 4,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:44:10",
+        "sensor": "AC3.2",
+        "data": {
+            "axle_count": 4,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:45:10",
+        "sensor": "AC3.1",
+        "data": {
+            "axle_count": 4,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:46:10",
+        "sensor": "AC1.4",
+        "data": {
+            "axle_count": 4,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:49:00",
+        "sensor": "SS3",
+        "data": {
+            "new_switch_position": "diverging"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:51:10",
+        "sensor": "SS2",
+        "data": {
+            "new_switch_position": "straight"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:52:00",
+        "sensor": "AC4.1",
+        "data": {
+            "axle_count": 4,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:53:00",
+        "sensor": "AC2.4",
+        "data": {
+            "axle_count": 4,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:53:10",
+        "sensor": "AC1.4",
+        "data": {
+            "axle_count": 4,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:54:00",
+        "sensor": "AC2.3",
+        "data": {
+            "axle_count": 4,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:54:10",
+        "sensor": "AC1.5",
+        "data": {
+            "axle_count": 4,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:55:00",
+        "sensor": "AC2.2",
+        "data": {
+            "axle_count": 4,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:56:00",
+        "sensor": "AC2.1",
+        "data": {
+            "axle_count": 4,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:57:00",
+        "sensor": "AC1.2",
+        "data": {
+            "axle_count": 4,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:57:10",
+        "sensor": "SS4",
+        "data": {
+            "new_switch_position": "straight"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:59:00",
+        "sensor": "SS1",
+        "data": {
+            "new_switch_position": "straight"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 03:59:10",
+        "sensor": "AC1.6",
+        "data": {
+            "axle_count": 4,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 04:00:10",
+        "sensor": "AC1.7",
+        "data": {
+            "axle_count": 4,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 04:01:10",
+        "sensor": "AC1.8",
+        "data": {
+            "axle_count": 4,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 04:02:10",
+        "sensor": "AC1.9",
+        "data": {
+            "axle_count": 4,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 04:03:10",
+        "sensor": "AC1.10",
+        "data": {
+            "axle_count": 4,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 04:03:15",
+        "sensor": "C2",
+        "data": {
+            "train_id": "FT9876"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 04:04:00",
+        "sensor": "SS2",
+        "data": {
+            "new_switch_position": "diverging"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 04:06:00",
+        "sensor": "AC1.2",
+        "data": {
+            "axle_count": 4,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 04:08:00",
+        "sensor": "AC1.3",
+        "data": {
+            "axle_count": 4,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 04:09:00",
+        "sensor": "AC1.4",
+        "data": {
+            "axle_count": 4,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 04:10:00",
+        "sensor": "AC3.1",
+        "data": {
+            "axle_count": 4,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 04:11:00",
+        "sensor": "AC3.2",
+        "data": {
+            "axle_count": 4,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 04:12:00",
+        "sensor": "AC3.3",
+        "data": {
+            "axle_count": 4,
+            "direction": "forward"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 04:14:00",
+        "sensor": "AC3.3",
+        "data": {
+            "axle_count": 8,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 04:15:00",
+        "sensor": "AC3.2",
+        "data": {
+            "axle_count": 8,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 04:16:00",
+        "sensor": "AC3.1",
+        "data": {
+            "axle_count": 8,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 04:17:00",
+        "sensor": "AC1.4",
+        "data": {
+            "axle_count": 8,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 04:18:00",
+        "sensor": "AC1.3",
+        "data": {
+            "axle_count": 8,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 04:19:00",
+        "sensor": "AC1.2",
+        "data": {
+            "axle_count": 8,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 04:20:00",
+        "sensor": "AC1.1",
+        "data": {
+            "axle_count": 8,
+            "direction": "reverse"
+        }
+    },
+    {
+        "timestamp": "2026-03-26 04:20:05",
+        "sensor": "C1",
+        "data": {
+            "train_id": "FT1234"
+        }
+    }
+]

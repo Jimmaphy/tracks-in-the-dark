@@ -38,25 +38,28 @@
     { "id": "SS3", "type": "switch_sensor" },
     { "id": "SS4", "type": "switch_sensor" },
     { "id": "SS5", "type": "switch_sensor" },
-    { "id": "SS6", "type": "switch_sensor" }
+    { "id": "SS6", "type": "switch_sensor" },
+
+    { "id": "C1", "type": "camera" },
+    { "id": "C2", "type": "camera" }
   ],
 
   "tracks": [
-    { "id": "T1A", "incoming_axle_counter": "AC1.1", "outgoing_axle_counter": "AC1.2", "type": "edge" },
-    { "id": "T1B", "incoming_axle_counter": "AC1.3", "outgoing_axle_counter": "AC1.4", "type": "main" },
-    { "id": "T1C", "incoming_axle_counter": "AC1.5", "outgoing_axle_counter": "AC1.6", "type": "siding" },
-    { "id": "T1D", "incoming_axle_counter": "AC1.7", "outgoing_axle_counter": "AC1.8", "type": "main" },
-    { "id": "T1E", "incoming_axle_counter": "AC1.9", "outgoing_axle_counter": "AC1.10", "type": "edge" },
-    { "id": "T2A", "incoming_axle_counter": "AC2.1", "outgoing_axle_counter": "AC2.2", "type": "main" },
-    { "id": "T2B", "incoming_axle_counter": "AC2.3", "outgoing_axle_counter": "AC2.4", "type": "main" },
-    { "id": "T2C", "incoming_axle_counter": "AC2.5", "outgoing_axle_counter": "AC2.6", "type": "siding" },
-    { "id": "T2D", "incoming_axle_counter": "AC2.7", "outgoing_axle_counter": "AC2.8", "type": "main" },
-    { "id": "T2E", "incoming_axle_counter": "AC2.9", "outgoing_axle_counter": "AC2.10", "type": "main" },
-    { "id": "T3A", "incoming_axle_counter": "AC3.1", "outgoing_axle_counter": "AC3.2", "type": "siding" },
-    { "id": "T3B", "incoming_axle_counter": "AC3.3", "outgoing_axle_counter": "AC3.4", "type": "siding" },
-    { "id": "T3C", "incoming_axle_counter": "AC3.5", "outgoing_axle_counter": "AC3.6", "type": "siding" },
-    { "id": "T4A", "incoming_axle_counter": "AC4.1", "outgoing_axle_counter": "AC4.2", "type": "siding" },
-    { "id": "T4B", "incoming_axle_counter": "AC4.3", "outgoing_axle_counter": "AC4.4", "type": "siding" }
+    { "id": "T1A", "incoming_axle_counter": "AC1.1", "outgoing_axle_counter": "AC1.2", "type": "edge", "camera": "C1" },
+    { "id": "T1B", "incoming_axle_counter": "AC1.3", "outgoing_axle_counter": "AC1.4", "type": "main", "camera": null },
+    { "id": "T1C", "incoming_axle_counter": "AC1.5", "outgoing_axle_counter": "AC1.6", "type": "siding", "camera": null },
+    { "id": "T1D", "incoming_axle_counter": "AC1.7", "outgoing_axle_counter": "AC1.8", "type": "main", "camera": null },
+    { "id": "T1E", "incoming_axle_counter": "AC1.9", "outgoing_axle_counter": "AC1.10", "type": "edge", "camera": "C2" },
+    { "id": "T2A", "incoming_axle_counter": "AC2.1", "outgoing_axle_counter": "AC2.2", "type": "main", "camera": null },
+    { "id": "T2B", "incoming_axle_counter": "AC2.3", "outgoing_axle_counter": "AC2.4", "type": "main", "camera": null },
+    { "id": "T2C", "incoming_axle_counter": "AC2.5", "outgoing_axle_counter": "AC2.6", "type": "siding", "camera": null },
+    { "id": "T2D", "incoming_axle_counter": "AC2.7", "outgoing_axle_counter": "AC2.8", "type": "main", "camera": null },
+    { "id": "T2E", "incoming_axle_counter": "AC2.9", "outgoing_axle_counter": "AC2.10", "type": "main", "camera": null },
+    { "id": "T3A", "incoming_axle_counter": "AC3.1", "outgoing_axle_counter": "AC3.2", "type": "siding", "camera": null },
+    { "id": "T3B", "incoming_axle_counter": "AC3.3", "outgoing_axle_counter": "AC3.4", "type": "siding", "camera": null },
+    { "id": "T3C", "incoming_axle_counter": "AC3.5", "outgoing_axle_counter": "AC3.6", "type": "siding", "camera": null },
+    { "id": "T4A", "incoming_axle_counter": "AC4.1", "outgoing_axle_counter": "AC4.2", "type": "siding", "camera": null },
+    { "id": "T4B", "incoming_axle_counter": "AC4.3", "outgoing_axle_counter": "AC4.4", "type": "siding", "camera": null }
   ],
 
   "connectors": [
