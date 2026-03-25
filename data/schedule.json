@@ -1,0 +1,42 @@
+[
+    {
+        "train": "FT1234",
+        "due_date": "2026-03-26 03:09:00",
+        "type": "delivery",
+        "cars": [
+            "RC6428",
+            "RC6767",
+            "RC4200",
+            "RC6055",
+            "RC2468"
+        ]
+    },
+    {
+        "train": "FT9876",
+        "due_date": "2026-03-26 03:30:00",
+        "type": "delivery",
+        "cars": [
+            "RC8456",
+            "RC0056",
+            "RC1238"
+        ]
+    },
+    {
+        "train": "FT1234",
+        "due_date": "2026-03-26 03:30:00",
+        "type": "emplacement",
+        "cars": []
+    },
+    {
+        "train": "FT9876",
+        "due_date": "2026-03-26 03:45:00",
+        "type": "transit",
+        "cars": []
+    },
+    {
+        "train": "FT1234",
+        "due_date": "2026-03-26 04:15:00",
+        "type": "pickup",
+        "cars": ["RC8456"]
+    }
+]

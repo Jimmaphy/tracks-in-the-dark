@@ -4,6 +4,21 @@ This directory contains data files that you may need for your project.
 Each file surves a specific purpose and is organized in a way to help you easily find what you need.
 This README.md file provides an overview of the contents of the `data/` directory and how to use the files within it.
 
+*Disclaimer:* everything provided in the `data/` directory is completely fictional.
+Data like identifiers, adr-codes, yard-layout, locations etc. are all made up for the purpose of the hackathon.
+Structure of the data does is no way represent their real-world counterparts.
+Information is simplified to be fun to work with in a hackathon setting.
+Any resemblance to real-world data is purely coincidental.
+
+
+## cars.json
+
+The `cars.json` file contains information about the cars that are used in all projects.
+Each car has a unique identifier, a type, content, and adr-code.
+The type describes the type of car, such as `boxcar`, `flatbed`, `engine`, etc.
+The content describes what the car is carrying, such as `water`, `nissan-ev hz-livery`, etc.
+The adr-code is a code that describes the type of content, such as `3` for flammable liquids, `8` for corrosive substances, etc.
+
 
 ## log.*.json
 
@@ -33,18 +48,30 @@ The connectors match those provided in the `yard.json` file.
 The maximum value for x is 500, the maximum value for y is 200.
 
 
+## schedule.json
+
+A schedule is a list of train scheduled to arrive and depart from the yard.
+Each entry is a single movement on the yard, which is identified by the type.
+These can be `delivery`, `pickup`, `emplacement` and `transit`.
+A delivery is a train that arrives to deliver card, pickup is the opposite of that.
+An emplacement is a train that moves within the yard, and a transit is a train that passes through the yard.
+
+
 ## yard.json
 
 The `yard.json` file contains information about the layout of the yard.
 Its purpose is to provide information as a data structure, *not* as a visual representation.
 
 After the name of the yard, a list of sensors is provided.
-There are two types of sensors: `axle_counter` and `switch_sensors`.
-The axle counter count the number of axles that pass by, while the switch sensors detect the state of the switches in the yard.
+There are three types of sensors: `axle_counter`, `camera` and `switch_sensor`.
+The axle counter count the number of axles that pass by.
+The camera sensors capture train identification as they pass, like speed cameras do for cars.
+The switch sensors detect the state of the switches in the yard.
 
 Following the sensors, a list of tracks is provided.
-Each track has a name, an incoming axle_counter, an outgoing axle_counter, and a type.
+Each track has a name, an incoming axle_counter, an outgoing axle_counter, camera, and a type.
 A track can be a `main` track, for driving, a `siding` for emplacement purposes, or an `edge` for tracks that enter or leave the yard. 
+Only edges are provided with a camera, as they are the only tracks that can capture train identification.
 
 Finally, a list of connections is provided.
 A connection has a name, a list of incoming tracks, a list of outgoing tracks, and a type.

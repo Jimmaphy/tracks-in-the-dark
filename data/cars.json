@@ -1,0 +1,62 @@
+[
+    {
+        "id": "RC0056",
+        "type": "tankcar",
+        "content": null,
+        "adr": null
+    },
+    {
+        "id": "FT1234",
+        "type": "engine",
+        "content": null,
+        "adr": null
+    },
+    {
+        "id": "RC1238",
+        "type": "tankcar",
+        "content": "water",
+        "adr": null
+    },
+    {
+        "id": "RC2468",
+        "type": "autotrack",
+        "content": "nissan-ev hz-livery",
+        "adr": "30.9400"
+    },
+    {
+        "id": "RC4200",
+        "type": "flatbed",
+        "content": null,
+        "adr": null
+    },
+    {
+        "id": "RC6055",
+        "type": "flatbed",
+        "content": null,
+        "adr": null
+    },
+    {
+        "id": "RC6428",
+        "type": "boxcar",
+        "content": "lithium-ion batteries",
+        "adr": "49.9310"
+    },
+    {
+        "id": "RC6767",
+        "type": "open-top hopper",
+        "content": "rice",
+        "adr": null
+    },
+    {
+        "id": "RC8456",
+        "type": "tankcar",
+        "content": "ethanol",
+        "adr": "23.7719"
+    },
+    {
+        "id": "FT9876",
+        "type": "engine",
+        "content": null,
+        "adr": null
+    }
+]
