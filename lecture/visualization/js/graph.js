@@ -1,75 +1,4 @@
-export type SwitchState = 'straight' | 'diverging';
-export type Direction = 'forward' | 'reverse';
-
-export interface Position {
-    x: number;
-    y: number;
-}
-
-export interface YardSensor {
-    id: string;
-    type: 'axle_counter' | 'camera' | 'switch_sensor';
-}
-
-export interface YardTrack {
-    id: string;
-    incoming_axle_counter: string;
-    outgoing_axle_counter: string;
-    type: 'edge' | 'main' | 'siding';
-    camera: string | null;
-}
-
-export interface YardConnector {
-    id: string;
-    incoming_tracks: string[];
-    outgoing_tracks: string[];
-    sensor: string | null;
-    type: 'switch' | 'corner';
-}
-
-export interface YardDefinition {
-    name: string;
-    sensors: YardSensor[];
-    tracks: YardTrack[];
-    connectors: YardConnector[];
-}
-
-export interface TrackRuntimeState {
-    axles: number;
-    cars: string[];
-    activeDirection: Direction | null;
-    activeAt: number | null;
-    anomaly: string | null;
-}
-
-export interface SwitchRuntimeState {
-    actual: SwitchState;
-    reported: SwitchState;
-    anomaly: string | null;
-}
-
-export interface YardSnapshot {
-    scenarioLabel: string;
-    timestampLabel: string;
-    currentTimeMs: number;
-    selectedTrackId: string | null;
-    highlightedRoute: string[];
-    activeSensors: string[];
-    sensorConfidence: Record<string, number>;
-    tracks: Record<string, TrackRuntimeState>;
-    switches: Record<string, SwitchRuntimeState>;
-}
-
-interface TrackGeometry {
-    start: Position;
-    end: Position;
-    center: Position;
-    angle: number;
-}
-
 const COLOR = {
-    background: '#081118',
-    yardFrame: '#0d1f28',
     text: '#eef7fb',
     muted: '#91aebb',
     rail: '#afc4cf',
@@ -83,16 +12,14 @@ const COLOR = {
 };
 
 export class YardRenderer {
-    private readonly connectorPositions = new Map<string, Position>();
-    private readonly trackGeometry = new Map<string, TrackGeometry>();
-    private readonly outgoingConnectorByTrack = new Map<string, string>();
-    private readonly incomingConnectorByTrack = new Map<string, string>();
-    private readonly trackBySensor = new Map<string, string>();
+    constructor(yard, points) {
+        this.yard = yard;
+        this.connectorPositions = new Map();
+        this.trackGeometry = new Map();
+        this.outgoingConnectorByTrack = new Map();
+        this.incomingConnectorByTrack = new Map();
+        this.trackBySensor = new Map();
 
-    constructor(
-        private readonly yard: YardDefinition,
-        points: Array<{ id: string; x: number; y: number }>
-    ) {
         for (const point of points) {
             this.connectorPositions.set(point.id, { x: point.x, y: point.y });
         }
@@ -110,29 +37,24 @@ export class YardRenderer {
         for (const track of yard.tracks) {
             this.trackBySensor.set(track.incoming_axle_counter, track.id);
             this.trackBySensor.set(track.outgoing_axle_counter, track.id);
-
             if (track.camera) {
                 this.trackBySensor.set(track.camera, track.id);
             }
-
             this.trackGeometry.set(track.id, this.buildTrackGeometry(track.id));
         }
     }
 
-    public resize(canvas: HTMLCanvasElement): void {
+    resize(canvas) {
         const ratio = window.devicePixelRatio || 1;
-        const width = canvas.clientWidth;
-        const height = canvas.clientHeight;
-
-        canvas.width = Math.max(1, Math.floor(width * ratio));
-        canvas.height = Math.max(1, Math.floor(height * ratio));
+        canvas.width = Math.max(1, Math.floor(canvas.clientWidth * ratio));
+        canvas.height = Math.max(1, Math.floor(canvas.clientHeight * ratio));
     }
 
-    public getTrackForSensor(sensorId: string): string | undefined {
+    getTrackForSensor(sensorId) {
         return this.trackBySensor.get(sensorId);
     }
 
-    public render(canvas: HTMLCanvasElement, snapshot: YardSnapshot): void {
+    render(canvas, snapshot) {
         const context = canvas.getContext('2d');
         if (!context) {
             return;
@@ -141,7 +63,6 @@ export class YardRenderer {
         const scaleX = canvas.width / 560;
         const scaleY = canvas.height / 280;
         context.setTransform(scaleX, 0, 0, scaleY, 0, 0);
-
         context.clearRect(0, 0, 560, 280);
         this.drawBackground(context);
         this.drawRails(context, snapshot);
@@ -149,7 +70,7 @@ export class YardRenderer {
         this.drawOverlay(context, snapshot);
     }
 
-    private drawBackground(context: CanvasRenderingContext2D): void {
+    drawBackground(context) {
         const gradient = context.createLinearGradient(0, 0, 560, 280);
         gradient.addColorStop(0, '#071118');
         gradient.addColorStop(1, '#102431');
@@ -169,14 +90,14 @@ export class YardRenderer {
         context.strokeRect(8, 8, 544, 264);
     }
 
-    private drawRails(context: CanvasRenderingContext2D, snapshot: YardSnapshot): void {
+    drawRails(context, snapshot) {
         for (const track of this.yard.tracks) {
             const geometry = this.trackGeometry.get(track.id);
-            if (!geometry) {
+            const runtime = snapshot.tracks[track.id];
+            if (!geometry || !runtime) {
                 continue;
             }
 
-            const runtime = snapshot.tracks[track.id];
             const isHighlighted = snapshot.highlightedRoute.includes(track.id);
             const isSelected = snapshot.selectedTrackId === track.id;
             const isActive = snapshot.activeSensors.some(sensorId => this.trackBySensor.get(sensorId) === track.id);
@@ -236,7 +157,7 @@ export class YardRenderer {
         }
     }
 
-    private drawConnectors(context: CanvasRenderingContext2D, snapshot: YardSnapshot): void {
+    drawConnectors(context, snapshot) {
         for (const connector of this.yard.connectors) {
             const position = this.connectorPositions.get(connector.id);
             if (!position) {
@@ -244,8 +165,7 @@ export class YardRenderer {
             }
 
             const runtime = connector.sensor ? snapshot.switches[connector.id] : undefined;
-            const hasAnomaly = Boolean(runtime?.anomaly);
-            const fill = hasAnomaly ? COLOR.danger : COLOR.connector;
+            const fill = runtime && runtime.anomaly ? COLOR.danger : COLOR.connector;
 
             context.beginPath();
             context.fillStyle = fill;
@@ -265,7 +185,7 @@ export class YardRenderer {
         }
     }
 
-    private drawOverlay(context: CanvasRenderingContext2D, snapshot: YardSnapshot): void {
+    drawOverlay(context, snapshot) {
         context.fillStyle = 'rgba(8, 17, 24, 0.72)';
         context.fillRect(16, 16, 230, 62);
         context.strokeStyle = 'rgba(163, 210, 228, 0.14)';
@@ -281,12 +201,7 @@ export class YardRenderer {
         context.fillText(`Hot sensors: ${snapshot.activeSensors.length}`, 28, 73);
     }
 
-    private drawDirectionMarker(
-        context: CanvasRenderingContext2D,
-        geometry: TrackGeometry,
-        runtime: TrackRuntimeState,
-        stroke: string
-    ): void {
+    drawDirectionMarker(context, geometry, runtime, stroke) {
         context.save();
         context.translate(geometry.center.x, geometry.center.y);
 
@@ -320,12 +235,7 @@ export class YardRenderer {
         context.restore();
     }
 
-    private drawCarsOnTrack(
-        context: CanvasRenderingContext2D,
-        geometry: TrackGeometry,
-        runtime: TrackRuntimeState,
-        currentTimeMs: number
-    ): void {
+    drawCarsOnTrack(context, geometry, runtime, currentTimeMs) {
         const visibleCars = runtime.cars.slice(0, 5);
         const spacing = 18;
         const startOffset = -((visibleCars.length - 1) * spacing) / 2;
@@ -350,7 +260,6 @@ export class YardRenderer {
             context.roundRect(-8, -5, 16, 10, 3);
             context.fill();
             context.stroke();
-
             context.fillStyle = '#0d1f28';
             context.fillRect(-2, -4, 4, 8);
             context.restore();
@@ -363,16 +272,16 @@ export class YardRenderer {
         }
     }
 
-    private buildTrackGeometry(trackId: string): TrackGeometry {
+    buildTrackGeometry(trackId) {
         const outgoingConnectorId = this.outgoingConnectorByTrack.get(trackId);
         const incomingConnectorId = this.incomingConnectorByTrack.get(trackId);
 
         const start = outgoingConnectorId
             ? this.mustGetPoint(outgoingConnectorId)
-            : this.extrapolateEdgePoint(this.mustGetPoint(incomingConnectorId!), 'left');
+            : this.extrapolateEdgePoint(this.mustGetPoint(incomingConnectorId), 'left');
         const end = incomingConnectorId
             ? this.mustGetPoint(incomingConnectorId)
-            : this.extrapolateEdgePoint(this.mustGetPoint(outgoingConnectorId!), 'right');
+            : this.extrapolateEdgePoint(this.mustGetPoint(outgoingConnectorId), 'right');
 
         return {
             start,
@@ -385,19 +294,18 @@ export class YardRenderer {
         };
     }
 
-    private extrapolateEdgePoint(anchor: Position, side: 'left' | 'right'): Position {
+    extrapolateEdgePoint(anchor, side) {
         return {
             x: side === 'left' ? Math.max(28, anchor.x - 90) : Math.min(532, anchor.x + 90),
             y: anchor.y,
         };
     }
 
-    private mustGetPoint(connectorId: string): Position {
+    mustGetPoint(connectorId) {
         const position = this.connectorPositions.get(connectorId);
         if (!position) {
             throw new Error(`Missing point for connector ${connectorId}`);
         }
-
         return position;
     }
 }

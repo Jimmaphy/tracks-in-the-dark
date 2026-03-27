@@ -1,117 +1,31 @@
-import {
-    Direction,
-    SwitchRuntimeState,
-    SwitchState,
-    TrackRuntimeState,
-    YardConnector,
-    YardDefinition,
-    YardRenderer,
-    YardSnapshot,
-} from './graph.js';
+import { YardRenderer } from './graph.js';
 
-type FaultKey =
-    | 'delay'
-    | 'drop'
-    | 'duplicate'
-    | 'drift'
-    | 'outOfOrder'
-    | 'switchDisagreement'
-    | 'ghostWagon';
-
-interface RawEvent {
-    timestamp: string;
-    sensor: string;
-    data: Record<string, unknown>;
-}
-
-interface StateFile {
-    tracks: Array<{ id: string; axles: number; cars?: string[] }>;
-    switches: Array<{ id: string; state: SwitchState }>;
-}
-
-interface ScenarioDefinition {
-    id: string;
-    label: string;
-    path: string | null;
-    description: string;
-}
-
-interface ScenarioEvent extends RawEvent {
-    sequence: number;
-    effectiveTimestamp: number;
-    originalTimestamp: number;
-    faults: string[];
-}
-
-interface AppElements {
-    canvas: HTMLCanvasElement;
-    scenarioSelect: HTMLSelectElement;
-    speedSelect: HTMLSelectElement;
-    timeline: HTMLInputElement;
-    playButton: HTMLButtonElement;
-    pauseButton: HTMLButtonElement;
-    resetButton: HTMLButtonElement;
-    routeButton: HTMLButtonElement;
-    moveButton: HTMLButtonElement;
-    ghostButton: HTMLButtonElement;
-    fromTrack: HTMLSelectElement;
-    toTrack: HTMLSelectElement;
-    moveCount: HTMLInputElement;
-    ghostCarId: HTMLInputElement;
-    scenarioPill: HTMLElement;
-    clockPill: HTMLElement;
-    faultPill: HTMLElement;
-    occupiedCount: HTMLElement;
-    occupiedDetail: HTMLElement;
-    sensorCount: HTMLElement;
-    sensorDetail: HTMLElement;
-    alertCount: HTMLElement;
-    alertDetail: HTMLElement;
-    timelineCurrent: HTMLElement;
-    timelineTotal: HTMLElement;
-    eventLog: HTMLElement;
-    trackList: HTMLElement;
-    switchList: HTMLElement;
-    faultInputs: HTMLInputElement[];
-}
-
-interface ManualState {
-    tracks: Record<string, TrackRuntimeState>;
-    switches: Record<string, SwitchRuntimeState>;
-    alerts: string[];
-}
-
-const SCENARIOS: ScenarioDefinition[] = [
-    { id: 'sandbox', label: 'Sandbox snapshot', path: null, description: 'Manual operations from the advanced yard state.' },
-    { id: 'basic', label: 'Basic arrival', path: '../../data/log.basic.json', description: 'Single train entering, dropping wagons, then leaving.' },
-    { id: 'medium', label: 'Medium directional replay', path: '../../data/log.medium.json', description: 'Directional axle counts with a return movement.' },
-    { id: 'advanced', label: 'Advanced yard choreography', path: '../../data/log.advanced.json', description: 'Multiple yard operations and split movements.' },
-    { id: 'advanced-broken', label: 'Advanced broken feed', path: '../../data/log.advanced.broken.json', description: 'Broken telemetry with drift, misses, and contradictions.' },
-    { id: 'expert-broken', label: 'Expert broken feed', path: '../../data/log.expert.broken.json', description: 'Broken feed with camera ids and miscounts.' },
+const SCENARIOS = [
+    { id: 'sandbox', label: 'Sandbox snapshot', path: null },
+    { id: 'basic', label: 'Basic arrival', path: '../../data/log.basic.json' },
+    { id: 'medium', label: 'Medium directional replay', path: '../../data/log.medium.json' },
+    { id: 'advanced', label: 'Advanced yard choreography', path: '../../data/log.advanced.json' },
+    { id: 'advanced-broken', label: 'Advanced broken feed', path: '../../data/log.advanced.broken.json' },
+    { id: 'expert-broken', label: 'Expert broken feed', path: '../../data/log.expert.broken.json' },
 ];
 
 class YardSimulatorApp {
-    private scenarioEventsById = new Map<string, RawEvent[]>();
-    private readonly switchIdBySensor = new Map<string, string>();
-    private manualState: ManualState;
-    private currentScenario = SCENARIOS[0];
-    private builtEvents: ScenarioEvent[] = [];
-    private highlightedRoute: string[] = [];
-    private playbackPosition = 0;
-    private playbackDuration = 1;
-    private playbackStart = 0;
-    private isPlaying = false;
-    private speed = 4;
-    private lastFrame = 0;
-    private readonly activeFaults = new Set<FaultKey>();
-    private readonly renderer: YardRenderer;
-
-    constructor(
-        private readonly yard: YardDefinition,
-        points: Array<{ id: string; x: number; y: number }>,
-        private readonly state: StateFile,
-        private readonly elements: AppElements
-    ) {
+    constructor(yard, points, state, elements) {
+        this.yard = yard;
+        this.state = state;
+        this.elements = elements;
+        this.scenarioEventsById = new Map();
+        this.switchIdBySensor = new Map();
+        this.currentScenario = SCENARIOS[0];
+        this.builtEvents = [];
+        this.highlightedRoute = [];
+        this.playbackPosition = 0;
+        this.playbackDuration = 1;
+        this.playbackStart = 0;
+        this.isPlaying = false;
+        this.speed = 4;
+        this.lastFrame = 0;
+        this.activeFaults = new Set();
         this.manualState = this.createManualState(state);
         this.renderer = new YardRenderer(yard, points);
 
@@ -120,17 +34,36 @@ class YardSimulatorApp {
                 this.switchIdBySensor.set(connector.sensor, connector.id);
             }
         }
+
+        this.tick = timestamp => {
+            if (this.isPlaying) {
+                if (this.lastFrame === 0) {
+                    this.lastFrame = timestamp;
+                }
+
+                const delta = timestamp - this.lastFrame;
+                this.playbackPosition = Math.min(this.playbackDuration, this.playbackPosition + delta * this.speed);
+                if (this.playbackPosition >= this.playbackDuration) {
+                    this.isPlaying = false;
+                }
+                this.syncTimelineInput();
+                this.render();
+            }
+
+            this.lastFrame = timestamp;
+            requestAnimationFrame(this.tick);
+        };
     }
 
-    public async loadScenarioData(): Promise<void> {
-        const loadTasks: Promise<void>[] = [];
+    async loadScenarioData() {
+        const loadTasks = [];
         for (const scenario of SCENARIOS) {
             if (!scenario.path) {
                 continue;
             }
 
             loadTasks.push(
-                fetchJson<RawEvent[]>(scenario.path).then(events => {
+                fetchJson(scenario.path).then(events => {
                     this.scenarioEventsById.set(scenario.id, events);
                 })
             );
@@ -139,7 +72,7 @@ class YardSimulatorApp {
         await Promise.all(loadTasks);
     }
 
-    public start(): void {
+    start() {
         this.populateScenarioControls();
         this.populateTrackControls();
         this.bindEvents();
@@ -149,26 +82,7 @@ class YardSimulatorApp {
         requestAnimationFrame(this.tick);
     }
 
-    private tick = (timestamp: number): void => {
-        if (this.isPlaying) {
-            if (this.lastFrame === 0) {
-                this.lastFrame = timestamp;
-            }
-
-            const delta = timestamp - this.lastFrame;
-            this.playbackPosition = Math.min(this.playbackDuration, this.playbackPosition + delta * this.speed);
-            if (this.playbackPosition >= this.playbackDuration) {
-                this.isPlaying = false;
-            }
-            this.syncTimelineInput();
-            this.render();
-        }
-
-        this.lastFrame = timestamp;
-        requestAnimationFrame(this.tick);
-    };
-
-    private bindEvents(): void {
+    bindEvents() {
         window.addEventListener('resize', () => {
             this.renderer.resize(this.elements.canvas);
             this.render();
@@ -213,7 +127,10 @@ class YardSimulatorApp {
 
         for (const faultInput of this.elements.faultInputs) {
             faultInput.addEventListener('change', () => {
-                const key = faultInput.dataset.fault as FaultKey;
+                const key = faultInput.dataset.fault;
+                if (!key) {
+                    return;
+                }
                 if (faultInput.checked) {
                     this.activeFaults.add(key);
                 } else {
@@ -255,14 +172,14 @@ class YardSimulatorApp {
         });
     }
 
-    private populateScenarioControls(): void {
+    populateScenarioControls() {
         this.elements.scenarioSelect.innerHTML = SCENARIOS
             .map(scenario => `<option value="${scenario.id}">${scenario.label}</option>`)
             .join('');
         this.elements.scenarioSelect.value = this.currentScenario.id;
     }
 
-    private populateTrackControls(): void {
+    populateTrackControls() {
         const options = this.yard.tracks
             .map(track => `<option value="${track.id}">${track.id}</option>`)
             .join('');
@@ -274,16 +191,13 @@ class YardSimulatorApp {
         this.renderSwitchboard();
     }
 
-    private rebuildScenario(): void {
+    rebuildScenario() {
         const sourceEvents = this.scenarioEventsById.get(this.currentScenario.id) ?? [];
         this.builtEvents = this.buildScenarioEvents(sourceEvents);
 
         if (this.builtEvents.length > 0) {
             this.playbackStart = this.builtEvents[0].effectiveTimestamp;
-            this.playbackDuration = Math.max(
-                1,
-                this.builtEvents[this.builtEvents.length - 1].effectiveTimestamp - this.playbackStart
-            );
+            this.playbackDuration = Math.max(1, this.builtEvents[this.builtEvents.length - 1].effectiveTimestamp - this.playbackStart);
         } else {
             this.playbackStart = Date.now();
             this.playbackDuration = 1;
@@ -293,15 +207,15 @@ class YardSimulatorApp {
         this.syncTimelineInput();
     }
 
-    private buildScenarioEvents(sourceEvents: RawEvent[]): ScenarioEvent[] {
-        const built: ScenarioEvent[] = [];
+    buildScenarioEvents(sourceEvents) {
+        const built = [];
         let droppedCount = 0;
         let duplicateIndex = 0;
 
         for (let index = 0; index < sourceEvents.length; index += 1) {
             const event = sourceEvents[index];
             const originalTimestamp = toTimestamp(event.timestamp);
-            const faults: string[] = [];
+            const faults = [];
             let effectiveTimestamp = originalTimestamp;
             let dropThisEvent = false;
 
@@ -311,8 +225,7 @@ class YardSimulatorApp {
             }
 
             if (this.activeFaults.has('drift')) {
-                const driftByFamily = (index % 4 - 1) * 15000;
-                effectiveTimestamp += driftByFamily;
+                effectiveTimestamp += (index % 4 - 1) * 15000;
                 faults.push('clock drift');
             }
 
@@ -336,11 +249,7 @@ class YardSimulatorApp {
                 });
             }
 
-            if (
-                this.activeFaults.has('duplicate') &&
-                typeof event.data.axle_count === 'number' &&
-                index % 6 === 1
-            ) {
+            if (this.activeFaults.has('duplicate') && typeof event.data.axle_count === 'number' && index % 6 === 1) {
                 duplicateIndex += 1;
                 built.push({
                     ...event,
@@ -366,11 +275,11 @@ class YardSimulatorApp {
         return built;
     }
 
-    private computeSnapshot(): { snapshot: YardSnapshot; alerts: string[]; appliedEvents: ScenarioEvent[] } {
+    computeSnapshot() {
         const snapshotState = cloneManualState(this.manualState);
-        const activeSensors = new Set<string>();
+        const activeSensors = new Set();
         const alerts = [...snapshotState.alerts];
-        const appliedEvents: ScenarioEvent[] = [];
+        const appliedEvents = [];
         const now = this.playbackStart + this.playbackPosition;
         const recentWindow = 110000;
 
@@ -396,22 +305,24 @@ class YardSimulatorApp {
             this.applyEventToState(snapshotState, event, alerts);
         }
 
-        const snapshot: YardSnapshot = {
-            scenarioLabel: this.currentScenario.label,
-            timestampLabel: this.builtEvents.length > 0 ? formatTimestamp(now) : 'Manual sandbox',
-            currentTimeMs: now,
-            selectedTrackId: this.elements.fromTrack.value || null,
-            highlightedRoute: this.highlightedRoute,
-            activeSensors: Array.from(activeSensors.values()),
-            sensorConfidence: this.buildSensorConfidence(appliedEvents),
-            tracks: snapshotState.tracks,
-            switches: snapshotState.switches,
+        return {
+            snapshot: {
+                scenarioLabel: this.currentScenario.label,
+                timestampLabel: this.builtEvents.length > 0 ? formatTimestamp(now) : 'Manual sandbox',
+                currentTimeMs: now,
+                selectedTrackId: this.elements.fromTrack.value || null,
+                highlightedRoute: this.highlightedRoute,
+                activeSensors: Array.from(activeSensors.values()),
+                sensorConfidence: this.buildSensorConfidence(appliedEvents),
+                tracks: snapshotState.tracks,
+                switches: snapshotState.switches,
+            },
+            alerts,
+            appliedEvents,
         };
-
-        return { snapshot, alerts, appliedEvents };
     }
 
-    private applyEventToState(state: ManualState, event: ScenarioEvent, alerts: string[]): void {
+    applyEventToState(state, event, alerts) {
         const data = event.data;
         const trackId = this.renderer.getTrackForSensor(event.sensor);
 
@@ -419,7 +330,6 @@ class YardSimulatorApp {
             const track = state.tracks[trackId];
             track.activeAt = event.effectiveTimestamp;
             track.activeDirection = parseDirection(data.direction);
-
             if (event.faults.length > 0) {
                 track.anomaly = event.faults.join(', ');
             }
@@ -451,9 +361,8 @@ class YardSimulatorApp {
         }
     }
 
-    private buildSensorConfidence(events: ScenarioEvent[]): Record<string, number> {
-        const confidence: Record<string, number> = {};
-
+    buildSensorConfidence(events) {
+        const confidence = {};
         for (const sensor of this.yard.sensors) {
             confidence[sensor.id] = 1;
         }
@@ -463,11 +372,10 @@ class YardSimulatorApp {
                 confidence[event.sensor] = Math.max(0.2, (confidence[event.sensor] ?? 1) - 0.25);
             }
         }
-
         return confidence;
     }
 
-    private moveCars(): void {
+    moveCars() {
         const sourceId = this.elements.fromTrack.value;
         const targetId = this.elements.toTrack.value;
         const count = Math.max(1, Number(this.elements.moveCount.value) || 1);
@@ -485,9 +393,7 @@ class YardSimulatorApp {
             return;
         }
 
-        const occupiedMiddleTrack = route
-            .slice(1, -1)
-            .find(trackId => this.manualState.tracks[trackId].cars.length > 0);
+        const occupiedMiddleTrack = route.slice(1, -1).find(trackId => this.manualState.tracks[trackId].cars.length > 0);
         if (occupiedMiddleTrack) {
             this.pushAlert(`Move blocked: ${occupiedMiddleTrack} is already occupied, preventing a collision.`);
             return;
@@ -508,20 +414,16 @@ class YardSimulatorApp {
         this.pushAlert(`Moved ${movedCars.join(', ')} from ${sourceId} to ${targetId}.`);
     }
 
-    private findRoute(fromTrackId: string, toTrackId: string, useAllSwitchBranches = false): string[] | null {
+    findRoute(fromTrackId, toTrackId, useAllSwitchBranches = false) {
         if (fromTrackId === toTrackId) {
             return [fromTrackId];
         }
 
-        const queue: string[][] = [[fromTrackId]];
-        const visited = new Set<string>([fromTrackId]);
+        const queue = [[fromTrackId]];
+        const visited = new Set([fromTrackId]);
 
         while (queue.length > 0) {
             const path = queue.shift();
-            if (!path) {
-                break;
-            }
-
             const current = path[path.length - 1];
             for (const next of this.getAdjacentTracks(current, useAllSwitchBranches)) {
                 if (visited.has(next)) {
@@ -541,9 +443,8 @@ class YardSimulatorApp {
         return null;
     }
 
-    private getAdjacentTracks(trackId: string, useAllSwitchBranches: boolean): string[] {
-        const adjacent: string[] = [];
-
+    getAdjacentTracks(trackId, useAllSwitchBranches) {
+        const adjacent = [];
         for (const connector of this.yard.connectors) {
             const links = this.getConnectorLinks(connector, useAllSwitchBranches);
             for (const link of links) {
@@ -554,11 +455,10 @@ class YardSimulatorApp {
                 }
             }
         }
-
         return adjacent;
     }
 
-    private getConnectorLinks(connector: YardConnector, useAllSwitchBranches = false): Array<[string, string]> {
+    getConnectorLinks(connector, useAllSwitchBranches = false) {
         if (connector.type === 'corner') {
             return [[connector.incoming_tracks[0], connector.outgoing_tracks[0]]];
         }
@@ -567,7 +467,6 @@ class YardSimulatorApp {
             if (connector.incoming_tracks.length === 1) {
                 return connector.outgoing_tracks.map(trackId => [connector.incoming_tracks[0], trackId]);
             }
-
             return connector.incoming_tracks.map(trackId => [trackId, connector.outgoing_tracks[0]]);
         }
 
@@ -582,7 +481,7 @@ class YardSimulatorApp {
         return [[branch, connector.outgoing_tracks[0]]];
     }
 
-    private alignSwitchesForRoute(route: string[]): void {
+    alignSwitchesForRoute(route) {
         for (let index = 0; index < route.length - 1; index += 1) {
             const fromTrack = route[index];
             const toTrack = route[index + 1];
@@ -607,7 +506,7 @@ class YardSimulatorApp {
         }
     }
 
-    private render(): void {
+    render() {
         const { snapshot, alerts, appliedEvents } = this.computeSnapshot();
         this.renderer.render(this.elements.canvas, snapshot);
         this.renderMetrics(snapshot, alerts);
@@ -617,7 +516,7 @@ class YardSimulatorApp {
         this.syncHeader(snapshot);
     }
 
-    private renderMetrics(snapshot: YardSnapshot, alerts: string[]): void {
+    renderMetrics(snapshot, alerts) {
         const occupiedTracks = this.yard.tracks.filter(track => snapshot.tracks[track.id].cars.length > 0);
         this.elements.occupiedCount.textContent = String(occupiedTracks.length);
         this.elements.occupiedDetail.textContent = occupiedTracks.length > 0
@@ -625,83 +524,67 @@ class YardSimulatorApp {
             : 'No wagons parked';
 
         this.elements.sensorCount.textContent = String(snapshot.activeSensors.length);
-        this.elements.sensorDetail.textContent = snapshot.activeSensors.length > 0
-            ? snapshot.activeSensors.join(', ')
-            : 'No active telemetry';
-
+        this.elements.sensorDetail.textContent = snapshot.activeSensors.length > 0 ? snapshot.activeSensors.join(', ') : 'No active telemetry';
         this.elements.alertCount.textContent = String(alerts.length);
-        this.elements.alertDetail.textContent = alerts.length > 0
-            ? alerts[alerts.length - 1]
-            : 'System stable';
-
+        this.elements.alertDetail.textContent = alerts.length > 0 ? alerts[alerts.length - 1] : 'System stable';
         this.elements.timelineCurrent.textContent = formatDuration(this.playbackPosition);
         this.elements.timelineTotal.textContent = formatDuration(this.playbackDuration);
     }
 
-    private renderEventLog(events: ScenarioEvent[]): void {
+    renderEventLog(events) {
         const recentEvents = events.slice(Math.max(0, events.length - 12)).reverse();
         if (recentEvents.length === 0) {
             this.elements.eventLog.innerHTML = '<div class="card"><strong>No live events</strong><span>Use the sandbox controls or start a replay.</span></div>';
             return;
         }
 
-        this.elements.eventLog.innerHTML = recentEvents
-            .map(event => {
-                const details = formatEventDetails(event);
-                const faultText = event.faults.length > 0 ? `Faults: ${event.faults.join(', ')}` : 'Nominal reading';
-                return `
-                    <div class="card">
-                        <strong>${event.sensor}</strong>
-                        <span>${formatTimestamp(event.effectiveTimestamp)}</span>
-                        <small>${details}</small>
-                        <small>${faultText}</small>
-                    </div>
-                `;
-            })
-            .join('');
+        this.elements.eventLog.innerHTML = recentEvents.map(event => `
+            <div class="card">
+                <strong>${event.sensor}</strong>
+                <span>${formatTimestamp(event.effectiveTimestamp)}</span>
+                <small>${formatEventDetails(event)}</small>
+                <small>${event.faults.length > 0 ? `Faults: ${event.faults.join(', ')}` : 'Nominal reading'}</small>
+            </div>
+        `).join('');
     }
 
-    private renderTrackList(tracks: Record<string, TrackRuntimeState>): void {
+    renderTrackList(tracks) {
         const orderedTracks = [...this.yard.tracks].sort((left, right) => {
             return tracks[right.id].cars.length - tracks[left.id].cars.length || left.id.localeCompare(right.id);
         });
 
-        this.elements.trackList.innerHTML = orderedTracks
-            .map(track => {
-                const runtime = tracks[track.id];
-                const cars = runtime.cars.length > 0 ? runtime.cars.join(', ') : 'empty';
-                const anomaly = runtime.anomaly ? ` | ${runtime.anomaly}` : '';
-                return `
-                    <div class="card">
-                        <strong>${track.id}</strong>
-                        <span>${track.type} | ${runtime.axles} axles${anomaly}</span>
-                        <small>${cars}</small>
-                    </div>
-                `;
-            })
-            .join('');
+        this.elements.trackList.innerHTML = orderedTracks.map(track => {
+            const runtime = tracks[track.id];
+            const cars = runtime.cars.length > 0 ? runtime.cars.join(', ') : 'empty';
+            const anomaly = runtime.anomaly ? ` | ${runtime.anomaly}` : '';
+            return `
+                <div class="card">
+                    <strong>${track.id}</strong>
+                    <span>${track.type} | ${runtime.axles} axles${anomaly}</span>
+                    <small>${cars}</small>
+                </div>
+            `;
+        }).join('');
     }
 
-    private renderSwitchboard(): void {
+    renderSwitchboard() {
         const switches = this.yard.connectors.filter(connector => connector.type === 'switch');
-        this.elements.switchList.innerHTML = switches
-            .map(connector => {
-                const runtime = this.manualState.switches[connector.id];
-                const nextState = runtime.actual === 'straight' ? 'diverging' : 'straight';
-                return `
-                    <div class="switch-chip">
-                        <span>${connector.id}: ${runtime.actual}</span>
-                        <button type="button" data-switch="${connector.id}" data-next="${nextState}">${nextState}</button>
-                    </div>
-                `;
-            })
-            .join('');
+        this.elements.switchList.innerHTML = switches.map(connector => {
+            const runtime = this.manualState.switches[connector.id];
+            const nextState = runtime.actual === 'straight' ? 'diverging' : 'straight';
+            return `
+                <div class="switch-chip">
+                    <span>${connector.id}: ${runtime.actual}</span>
+                    <button type="button" data-switch="${connector.id}" data-next="${nextState}">${nextState}</button>
+                </div>
+            `;
+        }).join('');
 
-        const buttons = this.elements.switchList.querySelectorAll<HTMLButtonElement>('button[data-switch]');
+        const buttons = this.elements.switchList.querySelectorAll('button[data-switch]');
         for (const button of Array.from(buttons)) {
             button.addEventListener('click', () => {
                 const switchId = button.dataset.switch;
-                const next = button.dataset.next as SwitchState | undefined;
+                const next = button.dataset.next;
                 if (!switchId || !next) {
                     return;
                 }
@@ -716,7 +599,7 @@ class YardSimulatorApp {
         }
     }
 
-    private syncHeader(snapshot: YardSnapshot): void {
+    syncHeader(snapshot) {
         this.elements.scenarioPill.textContent = `Scenario: ${this.currentScenario.label}`;
         this.elements.clockPill.textContent = `Clock: ${snapshot.timestampLabel}`;
         this.elements.faultPill.textContent = this.activeFaults.size > 0
@@ -724,76 +607,52 @@ class YardSimulatorApp {
             : 'Faults: none';
     }
 
-    private syncTimelineInput(): void {
+    syncTimelineInput() {
         const percent = Math.round((this.playbackPosition / this.playbackDuration) * 1000);
         this.elements.timeline.value = String(Math.max(0, Math.min(1000, percent)));
     }
 
-    private pushAlert(message: string): void {
+    pushAlert(message) {
         this.manualState.alerts.push(message);
         if (this.manualState.alerts.length > 18) {
             this.manualState.alerts.shift();
         }
     }
 
-    private createManualState(state: StateFile): ManualState {
-        const tracks: Record<string, TrackRuntimeState> = {};
-        const switches: Record<string, SwitchRuntimeState> = {};
+    createManualState(state) {
+        const tracks = {};
+        const switches = {};
 
         for (const track of this.yard.tracks) {
-            tracks[track.id] = {
-                axles: 0,
-                cars: [],
-                activeDirection: null,
-                activeAt: null,
-                anomaly: null,
-            };
+            tracks[track.id] = { axles: 0, cars: [], activeDirection: null, activeAt: null, anomaly: null };
         }
 
         for (const track of state.tracks) {
-            tracks[track.id] = {
-                ...tracks[track.id],
-                axles: track.axles,
-                cars: [...(track.cars ?? [])],
-            };
+            tracks[track.id] = { ...tracks[track.id], axles: track.axles, cars: [...(track.cars ?? [])] };
         }
 
         for (const connector of this.yard.connectors) {
-            if (connector.type !== 'switch') {
-                continue;
+            if (connector.type === 'switch') {
+                switches[connector.id] = { actual: 'straight', reported: 'straight', anomaly: null };
             }
-
-            switches[connector.id] = {
-                actual: 'straight',
-                reported: 'straight',
-                anomaly: null,
-            };
         }
 
         for (const switchState of state.switches) {
             if (switches[switchState.id]) {
-                switches[switchState.id] = {
-                    actual: switchState.state,
-                    reported: switchState.state,
-                    anomaly: null,
-                };
+                switches[switchState.id] = { actual: switchState.state, reported: switchState.state, anomaly: null };
             }
         }
 
-        return {
-            tracks,
-            switches,
-            alerts: ['Sandbox restored from advanced yard state.'],
-        };
+        return { tracks, switches, alerts: ['Sandbox restored from advanced yard state.'] };
     }
 }
 
-async function bootstrap(): Promise<void> {
+async function bootstrap() {
     const elements = getElements();
     const [yard, points, state] = await Promise.all([
-        fetchJson<YardDefinition>('../../data/yard.json'),
-        fetchJson<Array<{ id: string; x: number; y: number }>>('../../data/points.json'),
-        fetchJson<StateFile>('../../data/state.advanced.json'),
+        fetchJson('../../data/yard.json'),
+        fetchJson('../../data/points.json'),
+        fetchJson('../../data/state.advanced.json'),
     ]);
 
     const app = new YardSimulatorApp(yard, points, state, elements);
@@ -801,61 +660,59 @@ async function bootstrap(): Promise<void> {
     app.start();
 }
 
-function getElements(): AppElements {
+function getElements() {
     return {
-        canvas: requireElement<HTMLCanvasElement>('graph'),
-        scenarioSelect: requireElement<HTMLSelectElement>('scenario-select'),
-        speedSelect: requireElement<HTMLSelectElement>('speed-select'),
-        timeline: requireElement<HTMLInputElement>('timeline'),
-        playButton: requireElement<HTMLButtonElement>('play-button'),
-        pauseButton: requireElement<HTMLButtonElement>('pause-button'),
-        resetButton: requireElement<HTMLButtonElement>('reset-button'),
-        routeButton: requireElement<HTMLButtonElement>('route-button'),
-        moveButton: requireElement<HTMLButtonElement>('move-button'),
-        ghostButton: requireElement<HTMLButtonElement>('ghost-button'),
-        fromTrack: requireElement<HTMLSelectElement>('from-track'),
-        toTrack: requireElement<HTMLSelectElement>('to-track'),
-        moveCount: requireElement<HTMLInputElement>('move-count'),
-        ghostCarId: requireElement<HTMLInputElement>('ghost-car-id'),
-        scenarioPill: requireElement<HTMLElement>('scenario-pill'),
-        clockPill: requireElement<HTMLElement>('clock-pill'),
-        faultPill: requireElement<HTMLElement>('fault-pill'),
-        occupiedCount: requireElement<HTMLElement>('occupied-count'),
-        occupiedDetail: requireElement<HTMLElement>('occupied-detail'),
-        sensorCount: requireElement<HTMLElement>('sensor-count'),
-        sensorDetail: requireElement<HTMLElement>('sensor-detail'),
-        alertCount: requireElement<HTMLElement>('alert-count'),
-        alertDetail: requireElement<HTMLElement>('alert-detail'),
-        timelineCurrent: requireElement<HTMLElement>('timeline-current'),
-        timelineTotal: requireElement<HTMLElement>('timeline-total'),
-        eventLog: requireElement<HTMLElement>('event-log'),
-        trackList: requireElement<HTMLElement>('track-list'),
-        switchList: requireElement<HTMLElement>('switch-list'),
-        faultInputs: Array.from(document.querySelectorAll<HTMLInputElement>('input[data-fault]')),
+        canvas: requireElement('graph'),
+        scenarioSelect: requireElement('scenario-select'),
+        speedSelect: requireElement('speed-select'),
+        timeline: requireElement('timeline'),
+        playButton: requireElement('play-button'),
+        pauseButton: requireElement('pause-button'),
+        resetButton: requireElement('reset-button'),
+        routeButton: requireElement('route-button'),
+        moveButton: requireElement('move-button'),
+        ghostButton: requireElement('ghost-button'),
+        fromTrack: requireElement('from-track'),
+        toTrack: requireElement('to-track'),
+        moveCount: requireElement('move-count'),
+        ghostCarId: requireElement('ghost-car-id'),
+        scenarioPill: requireElement('scenario-pill'),
+        clockPill: requireElement('clock-pill'),
+        faultPill: requireElement('fault-pill'),
+        occupiedCount: requireElement('occupied-count'),
+        occupiedDetail: requireElement('occupied-detail'),
+        sensorCount: requireElement('sensor-count'),
+        sensorDetail: requireElement('sensor-detail'),
+        alertCount: requireElement('alert-count'),
+        alertDetail: requireElement('alert-detail'),
+        timelineCurrent: requireElement('timeline-current'),
+        timelineTotal: requireElement('timeline-total'),
+        eventLog: requireElement('event-log'),
+        trackList: requireElement('track-list'),
+        switchList: requireElement('switch-list'),
+        faultInputs: Array.from(document.querySelectorAll('input[data-fault]')),
     };
 }
 
-function requireElement<T extends HTMLElement>(id: string): T {
+function requireElement(id) {
     const element = document.getElementById(id);
     if (!element) {
         throw new Error(`Missing element #${id}`);
     }
-
-    return element as T;
+    return element;
 }
 
-async function fetchJson<T>(path: string): Promise<T> {
+async function fetchJson(path) {
     const response = await fetch(path);
     if (!response.ok) {
         throw new Error(`Failed to load ${path}`);
     }
-
-    return response.json() as Promise<T>;
+    return response.json();
 }
 
-function cloneManualState(state: ManualState): ManualState {
-    const tracks: Record<string, TrackRuntimeState> = {};
-    const switches: Record<string, SwitchRuntimeState> = {};
+function cloneManualState(state) {
+    const tracks = {};
+    const switches = {};
 
     for (const trackId of Object.keys(state.tracks)) {
         const track = state.tracks[trackId];
@@ -870,30 +727,21 @@ function cloneManualState(state: ManualState): ManualState {
 
     for (const switchId of Object.keys(state.switches)) {
         const runtime = state.switches[switchId];
-        switches[switchId] = {
-            actual: runtime.actual,
-            reported: runtime.reported,
-            anomaly: runtime.anomaly,
-        };
+        switches[switchId] = { actual: runtime.actual, reported: runtime.reported, anomaly: runtime.anomaly };
     }
 
-    return {
-        tracks,
-        switches,
-        alerts: [...state.alerts],
-    };
+    return { tracks, switches, alerts: [...state.alerts] };
 }
 
-function toTimestamp(text: string): number {
+function toTimestamp(text) {
     return new Date(text.replace(' ', 'T')).getTime();
 }
 
-function timestampToText(value: number): string {
-    const iso = new Date(value).toISOString();
-    return iso.slice(0, 19).replace('T', ' ');
+function timestampToText(value) {
+    return new Date(value).toISOString().slice(0, 19).replace('T', ' ');
 }
 
-function formatTimestamp(value: number): string {
+function formatTimestamp(value) {
     return new Intl.DateTimeFormat('en-GB', {
         hour: '2-digit',
         minute: '2-digit',
@@ -903,31 +751,28 @@ function formatTimestamp(value: number): string {
     }).format(new Date(value));
 }
 
-function formatDuration(value: number): string {
+function formatDuration(value) {
     const totalSeconds = Math.floor(value / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-function parseDirection(value: unknown): Direction | null {
+function parseDirection(value) {
     return value === 'forward' || value === 'reverse' ? value : null;
 }
 
-function formatEventDetails(event: ScenarioEvent): string {
+function formatEventDetails(event) {
     if (typeof event.data.axle_count === 'number') {
         const direction = typeof event.data.direction === 'string' ? ` ${event.data.direction}` : '';
         return `${event.data.axle_count} axles${direction}`;
     }
-
     if (typeof event.data.new_switch_position === 'string') {
         return `switch ${event.data.new_switch_position}`;
     }
-
     if (typeof event.data.train_id === 'string') {
         return `train ${event.data.train_id}`;
     }
-
     return 'sensor update';
 }
 
