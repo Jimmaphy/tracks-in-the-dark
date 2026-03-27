@@ -4,29 +4,483 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Graph Workshop</title>
+        <title>Echoes of the Emplacement</title>
+        <style>
+            :root {
+                --bg: #09141b;
+                --panel: rgba(10, 31, 41, 0.9);
+                --panel-strong: #0f2430;
+                --line: rgba(163, 210, 228, 0.18);
+                --text: #eef7fb;
+                --muted: #91aebb;
+                --accent: #f3a447;
+                --accent-cold: #6bd0ff;
+                --danger: #ff7d66;
+                --good: #7ad38b;
+                --warning: #f7d774;
+                --shadow: 0 18px 40px rgba(2, 9, 13, 0.35);
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                margin: 0;
+                min-height: 100vh;
+                font-family: "Segoe UI", "Trebuchet MS", sans-serif;
+                color: var(--text);
+                background:
+                    radial-gradient(circle at top left, rgba(107, 208, 255, 0.12), transparent 28%),
+                    radial-gradient(circle at top right, rgba(243, 164, 71, 0.14), transparent 24%),
+                    linear-gradient(135deg, #071118 0%, #0d1f28 55%, #122733 100%);
+            }
+
+            .shell {
+                display: grid;
+                grid-template-columns: minmax(0, 1.7fr) minmax(360px, 0.95fr);
+                gap: 1.25rem;
+                padding: 1.25rem;
+            }
+
+            .panel {
+                background: var(--panel);
+                border: 1px solid var(--line);
+                border-radius: 22px;
+                box-shadow: var(--shadow);
+                backdrop-filter: blur(10px);
+            }
+
+            .hero {
+                padding: 1.25rem 1.4rem 0.75rem;
+            }
+
+            .eyebrow {
+                letter-spacing: 0.18em;
+                text-transform: uppercase;
+                font-size: 0.72rem;
+                color: var(--accent-cold);
+                margin: 0 0 0.45rem;
+            }
+
+            h1 {
+                margin: 0;
+                font-size: clamp(1.8rem, 2.6vw, 3rem);
+                line-height: 1;
+            }
+
+            .hero p {
+                color: var(--muted);
+                max-width: 68ch;
+                margin: 0.85rem 0 0;
+            }
+
+            .status-strip {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.75rem;
+                margin-top: 1rem;
+            }
+
+            .pill {
+                padding: 0.55rem 0.8rem;
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.04);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                font-size: 0.9rem;
+                color: var(--muted);
+            }
+
+            .layout-left {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .canvas-panel {
+                padding: 1rem;
+            }
+
+            .canvas-wrap {
+                border-radius: 18px;
+                overflow: hidden;
+                border: 1px solid var(--line);
+                background: linear-gradient(180deg, rgba(2, 12, 18, 0.8), rgba(8, 19, 25, 0.95));
+            }
+
+            #graph {
+                display: block;
+                width: 100%;
+                height: min(72vh, 760px);
+            }
+
+            .telemetry-grid {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 1rem;
+                padding: 0 1rem 1rem;
+            }
+
+            .metric {
+                padding: 1rem;
+            }
+
+            .metric h2,
+            .sidebar h2 {
+                margin: 0 0 0.75rem;
+                font-size: 1rem;
+            }
+
+            .metric strong {
+                display: block;
+                font-size: 1.8rem;
+                color: var(--accent);
+            }
+
+            .metric span {
+                display: block;
+                margin-top: 0.4rem;
+                color: var(--muted);
+                font-size: 0.92rem;
+            }
+
+            .sidebar {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .sidebar section {
+                padding: 1rem;
+            }
+
+            .grid-2 {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.75rem;
+            }
+
+            label,
+            .control-label {
+                display: block;
+                margin-bottom: 0.35rem;
+                color: var(--muted);
+                font-size: 0.84rem;
+            }
+
+            select,
+            input,
+            button,
+            textarea {
+                width: 100%;
+                border-radius: 12px;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                background: rgba(255, 255, 255, 0.05);
+                color: var(--text);
+                padding: 0.75rem 0.85rem;
+                font: inherit;
+            }
+
+            select,
+            select option {
+                color: #0d1f28;
+                background: #f3f7f9;
+            }
+
+            input,
+            textarea {
+                color: var(--text);
+            }
+
+            button {
+                cursor: pointer;
+                transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+            }
+
+            button:hover {
+                transform: translateY(-1px);
+                border-color: rgba(243, 164, 71, 0.65);
+            }
+
+            button.primary {
+                background: linear-gradient(135deg, rgba(243, 164, 71, 0.3), rgba(243, 164, 71, 0.14));
+                border-color: rgba(243, 164, 71, 0.4);
+            }
+
+            button.secondary {
+                background: linear-gradient(135deg, rgba(107, 208, 255, 0.18), rgba(107, 208, 255, 0.08));
+            }
+
+            .button-row {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 0.65rem;
+            }
+
+            .checkbox-list {
+                display: grid;
+                gap: 0.55rem;
+            }
+
+            .checkbox {
+                display: flex;
+                align-items: center;
+                gap: 0.6rem;
+                padding: 0.55rem 0.75rem;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 12px;
+                color: var(--muted);
+            }
+
+            .checkbox input {
+                width: auto;
+                margin: 0;
+            }
+
+            .switch-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.55rem;
+            }
+
+            .switch-chip {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.65rem;
+                padding: 0.7rem 0.85rem;
+                border-radius: 14px;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                background: rgba(255, 255, 255, 0.04);
+                font-size: 0.92rem;
+            }
+
+            .switch-chip button {
+                width: auto;
+                padding: 0.45rem 0.75rem;
+            }
+
+            .list {
+                display: grid;
+                gap: 0.6rem;
+                max-height: 17rem;
+                overflow: auto;
+            }
+
+            .card {
+                padding: 0.8rem 0.9rem;
+                border-radius: 14px;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                background: rgba(255, 255, 255, 0.04);
+            }
+
+            .card strong {
+                display: block;
+                margin-bottom: 0.25rem;
+            }
+
+            .card small,
+            .card span {
+                color: var(--muted);
+            }
+
+            .timeline-meta {
+                display: flex;
+                justify-content: space-between;
+                gap: 1rem;
+                color: var(--muted);
+                margin-top: 0.35rem;
+                font-size: 0.88rem;
+            }
+
+            .legend {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.6rem;
+                color: var(--muted);
+                font-size: 0.84rem;
+                margin-top: 0.8rem;
+            }
+
+            .legend span::before {
+                content: "";
+                display: inline-block;
+                width: 0.7rem;
+                height: 0.7rem;
+                border-radius: 999px;
+                margin-right: 0.4rem;
+                vertical-align: middle;
+            }
+
+            .legend .occupied::before {
+                background: var(--accent);
+            }
+
+            .legend .active::before {
+                background: var(--accent-cold);
+            }
+
+            .legend .fault::before {
+                background: var(--danger);
+            }
+
+            .legend .route::before {
+                background: var(--good);
+            }
+
+            @media (max-width: 1200px) {
+                .shell {
+                    grid-template-columns: 1fr;
+                }
+
+                .telemetry-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
     </head>
 
-    <style>
-        body {
-            margin: 1vw;
-        }
-        
-        #graph {
-            width: 500px;
-            height: 500px;
-            border: 1px solid black;
-        }
-    </style>
-
     <body>
-        <header>
-            <h1>Graphs</h1>
-        </header>
+        <div class="shell">
+            <div class="layout-left">
+                <section class="panel hero">
+                    <p class="eyebrow">Echoes of the Emplacement</p>
+                    <h1>Rail Yard Scenario Simulator</h1>
+                    <p>
+                        A controllable digital twin for building routes, replaying sensor feeds,
+                        shuffling wagons, and injecting the kinds of imperfect telemetry that make
+                        tracking systems earn their keep.
+                    </p>
+                    <div class="status-strip">
+                        <div class="pill" id="scenario-pill">Scenario: loading</div>
+                        <div class="pill" id="clock-pill">Clock: --</div>
+                        <div class="pill" id="fault-pill">Faults: none</div>
+                    </div>
+                </section>
 
-        <main>
-            <canvas id="graph"></canvas>
-        </main>
+                <section class="panel canvas-panel">
+                    <div class="canvas-wrap">
+                        <canvas id="graph"></canvas>
+                    </div>
+                    <div class="legend">
+                        <span class="occupied">Occupied track</span>
+                        <span class="active">Live sensor pulse</span>
+                        <span class="route">Reserved route</span>
+                        <span class="fault">Fault or disagreement</span>
+                    </div>
+                </section>
+
+                <section class="telemetry-grid">
+                    <div class="panel metric">
+                        <h2>Occupied Tracks</h2>
+                        <strong id="occupied-count">0</strong>
+                        <span id="occupied-detail">Awaiting yard state</span>
+                    </div>
+                    <div class="panel metric">
+                        <h2>Active Sensors</h2>
+                        <strong id="sensor-count">0</strong>
+                        <span id="sensor-detail">No telemetry yet</span>
+                    </div>
+                    <div class="panel metric">
+                        <h2>Open Alerts</h2>
+                        <strong id="alert-count">0</strong>
+                        <span id="alert-detail">Clean run</span>
+                    </div>
+                </section>
+            </div>
+
+            <aside class="sidebar">
+                <section class="panel">
+                    <h2>Scenario Playback</h2>
+                    <div>
+                        <label for="scenario-select">Scenario</label>
+                        <select id="scenario-select"></select>
+                    </div>
+                    <div class="grid-2" style="margin-top: 0.75rem;">
+                        <div>
+                            <label for="speed-select">Speed</label>
+                            <select id="speed-select">
+                                <option value="0.5">0.5x</option>
+                                <option value="1">1x</option>
+                                <option value="4" selected>4x</option>
+                                <option value="12">12x</option>
+                                <option value="30">30x</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="timeline">Timeline</label>
+                            <input id="timeline" type="range" min="0" max="1000" value="0">
+                        </div>
+                    </div>
+                    <div class="timeline-meta">
+                        <span id="timeline-current">00:00</span>
+                        <span id="timeline-total">00:00</span>
+                    </div>
+                    <div class="button-row" style="margin-top: 0.8rem;">
+                        <button class="primary" id="play-button">Play</button>
+                        <button class="secondary" id="pause-button">Pause</button>
+                        <button id="reset-button">Reset</button>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <h2>Fault Injection</h2>
+                    <div class="checkbox-list">
+                        <label class="checkbox"><input data-fault="delay" type="checkbox">Delayed messages</label>
+                        <label class="checkbox"><input data-fault="drop" type="checkbox">Missing messages</label>
+                        <label class="checkbox"><input data-fault="duplicate" type="checkbox">Duplicate counts</label>
+                        <label class="checkbox"><input data-fault="drift" type="checkbox">Clock drift</label>
+                        <label class="checkbox"><input data-fault="outOfOrder" type="checkbox">Out-of-order events</label>
+                        <label class="checkbox"><input data-fault="switchDisagreement" type="checkbox">Switch disagreement</label>
+                        <label class="checkbox"><input data-fault="ghostWagon" type="checkbox">Ghost wagon appearance</label>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <h2>Route And Wagon Moves</h2>
+                    <div class="grid-2">
+                        <div>
+                            <label for="from-track">From track</label>
+                            <select id="from-track"></select>
+                        </div>
+                        <div>
+                            <label for="to-track">To track</label>
+                            <select id="to-track"></select>
+                        </div>
+                    </div>
+                    <div class="grid-2" style="margin-top: 0.75rem;">
+                        <div>
+                            <label for="move-count">Cars to move</label>
+                            <input id="move-count" type="number" min="1" value="1">
+                        </div>
+                        <div>
+                            <label for="ghost-car-id">Ghost wagon id</label>
+                            <input id="ghost-car-id" value="GHOST-01">
+                        </div>
+                    </div>
+                    <div class="button-row" style="margin-top: 0.8rem;">
+                        <button class="primary" id="route-button">Preview Route</button>
+                        <button class="secondary" id="move-button">Move Cars</button>
+                        <button id="ghost-button">Inject Ghost</button>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <h2>Switchboard</h2>
+                    <div id="switch-list" class="switch-grid"></div>
+                </section>
+
+                <section class="panel">
+                    <h2>Live Event Log</h2>
+                    <div id="event-log" class="list"></div>
+                </section>
+
+                <section class="panel">
+                    <h2>Track Inventory</h2>
+                    <div id="track-list" class="list"></div>
+                </section>
+            </aside>
+        </div>
 
         <script type="module" src="./js/main.js"></script>
     </body>

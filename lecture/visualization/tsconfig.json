@@ -3,6 +3,8 @@
     "rootDir": "./src",
     "outDir": "./js",
     "target": "es6",
+    "module": "es2020",
+    "lib": ["dom", "es2020"],
     "sourceMap": true,
     "strict": true,
     "jsx": "react-jsx",
